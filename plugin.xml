@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="ro.martinescu.wavrecorder"
+        version="0.1.0">
+	
+    <name>WAV Recorder</name>
+    <description>Advanced Android Recording that provides access to the recorded buffer to the webview.</description>
+    <repo>https://github.com/petrica/wav-recorder.git</repo>
+    <author>Martinescu Petrica (petrica@martinescu.com)</author>
+    <license>MIT</license>
+	
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="WAVRecorder">
+                <param name="android-package" value="ro.martinescu.WAVRecorder"/>
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/WAVRecorder.java" target-dir="src/ro/martinescu" />
+
+        <js-module src="www/android/wavrecorder.js" name="wavrecorder_android">
+            <clobbers target="martinescu.recorder"/>
+        </js-module>
+		
+		<config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+			<uses-permission android:name="android.permission.READ_PHONE_STATE" />
+        </config-file>
+    </platform>
+</plugin>
