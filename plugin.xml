@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
-        id="ro.martinescu.wavrecorder"
+        id="ro.martinescu.audio"
         version="0.1.0">
 	
     <name>WAV Recorder</name>
@@ -9,18 +9,21 @@
     <repo>https://github.com/petrica/wav-recorder.git</repo>
     <author>Martinescu Petrica (petrica@martinescu.com)</author>
     <license>MIT</license>
-	
+
+    <dependency id="org.apache.cordova.media" version=">=0.2.12" />
+
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="WAVRecorder">
-                <param name="android-package" value="ro.martinescu.WAVRecorder"/>
+                <param name="android-package" value="ro.martinescu.audio.WAVRecorder"/>
             </feature>
         </config-file>
 
-        <source-file src="src/android/WAVRecorder.java" target-dir="src/ro/martinescu" />
+        <source-file src="src/android/WAVRecorder.java" target-dir="src/ro/martinescu/audio" />
+        <source-file src="src/android/ExtAudioRecorder.java" target-dir="src/ro/martinescu/audio" />
 
         <js-module src="www/android/wavrecorder.js" name="wavrecorder_android">
-            <clobbers target="martinescu.recorder"/>
+            <clobbers target="windows.martinescu.Recorder"/>
         </js-module>
 		
 		<config-file target="AndroidManifest.xml" parent="/*">
