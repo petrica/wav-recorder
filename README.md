@@ -53,7 +53,7 @@ recorder.stop();
 
 Release Recorder
 ----------------
-When done with the recorder, call release() in order to free memory allocated for it.
+When done with the recorder, call release() in order to free allocated memory.
 ```
 recorder.release();
 ```
