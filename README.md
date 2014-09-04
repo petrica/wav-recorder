@@ -6,6 +6,14 @@ Introduction
 
 PhoneGap Cordova Plugin for Android Platform. Records uncompressed audio data to disk as WAV format. The audio buffer is accessible from the webview, thus it is possible ro render to the client the audio data in real time.
 
+Installation
+------------
+
+Using the Cordova Command-line Interface:
+```
+cordova plugin add https://github.com/petrica/wav-recorder.git
+```
+
 Initialize Recorder
 -------------------
 
