@@ -36,6 +36,14 @@ public class WAVRecorder extends CordovaPlugin {
         }
         else if (action.equals("create")) {
             String id = args.getString(0);
+            String target = args.getString(1);
+            String fileUriStr;
+            try {
+                Uri targetUri = resourceApi.remapUri(Uri.parse(target));
+                fileUriStr = targetUri.toString();
+            } catch (IllegalArgumentException e) {
+                fileUriStr = target;
+            }
             
             int sampleRate = args.getInt(2);
             int channels = args.getInt(3);
@@ -49,7 +57,7 @@ public class WAVRecorder extends CordovaPlugin {
             if (encoding == 8) encoding = AudioFormat.ENCODING_PCM_8BIT;
             else encoding = AudioFormat.ENCODING_PCM_16BIT;
             
-            String src = FileHelper.stripFileProtocol(args.getString(1));
+            String src = FileHelper.stripFileProtocol(fileUriStr);
             ExtAudioRecorder audio = ExtAudioRecorder.getInstance(
             		this, 
             		id, 
@@ -58,7 +66,6 @@ public class WAVRecorder extends CordovaPlugin {
             		encoding
             		);
             audio.setOutputFile(src);
-            audio.prepare();
             
             this.players.put(id, audio);
         }
@@ -69,11 +76,12 @@ public class WAVRecorder extends CordovaPlugin {
         callbackContext.sendPluginResult(new PluginResult(status, result));
         
         return true;
-	}
+    }
 	
 	public void startRecording(String id) {
 		ExtAudioRecorder audio = this.players.get(id);
 		if (audio != null) {
+			audio.prepare();
 			audio.start();
 		}
     }

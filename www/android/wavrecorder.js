@@ -39,6 +39,12 @@ var Recorder = function(src, config, statusCallback, bufferCallback) {
 Recorder.MEDIA_STATE = 1;
 Recorder.MEDIA_BUFFER = 2;
 
+Recorder.STATUS_INITIALIZING = 'INITIALIZING';
+Recorder.STATUS_READY = 'READY';
+Recorder.STATUS_RECORDING = 'RECORDING';
+Recorder.STATUS_ERROR = 'ERROR';
+Recorder.STATUS_STOPPED = 'STOPPED';
+
 /**
 * Start recorder
   */
@@ -68,14 +74,14 @@ Recorder.prototype.release = function() {
  * @param msgType       The 'type' of update this is
  * @param value         Use of value is determined by the msgType
  */
-Recorder.onStatus = function(id, msgType, value) {
+Recorder.onStatus = function(id, msgType, value, msg) {
 
   var recorder = mediaObjects[id];
 
   if(recorder) {
     switch(msgType) {
       case Recorder.MEDIA_STATE :
-        recorder.statusCallback && recorder.statusCallback(value);
+        recorder.statusCallback && recorder.statusCallback(value, msg);
         break;
       case Recorder.MEDIA_BUFFER :
         recorder.bufferCallback && recorder.bufferCallback(value);

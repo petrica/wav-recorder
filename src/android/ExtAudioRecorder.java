@@ -3,6 +3,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import org.apache.cordova.PluginResult.Status;
+import org.json.JSONArray;
+
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
@@ -74,11 +77,15 @@ public class ExtAudioRecorder
 	// Recorder state; see State
 	private State          	state;
 	
+	// Error message if any
+	private String			errorMessage = "";
+	
 	// File writer (only in uncompressed mode)
 	private RandomAccessFile randomAccessWriter;
 		       
 	// Number of channels, sample rate, sample size(size in bits), buffer size, audio source, sample size(see AudioFormat)
 	private short                    nChannels;
+	private int						 channelConfig;
 	private int                      sRate;
 	private short                    bSamples;
 	private int                      bufferSize;
@@ -90,6 +97,8 @@ public class ExtAudioRecorder
 	
 	// Buffer for output(only in uncompressed mode)
 	private byte[]                   buffer;
+	// Buffer intended for other processing
+	private JSONArray 				 humanBuffer;
 	
 	// Number of bytes written to file after header(only in uncompressed mode)
 	// after stop() is called, this size is written to the header/data chunk in the wave file
@@ -123,40 +132,49 @@ public class ExtAudioRecorder
 		public void onPeriodicNotification(AudioRecord recorder)
 		{
 			audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
-			// send the buffer to javascript
-			if (handler != null) {
-				handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + id + "', " + MEDIA_BUFFER + ", '" + Base64.encodeToString(buffer, Base64.DEFAULT) + "');");
-			}
-			try
-			{ 
-				randomAccessWriter.write(buffer); // Write buffer to file
-				payloadSize += buffer.length;
-				if (bSamples == 16)
-				{
-					for (int i=0; i<buffer.length/2; i++)
-					{ // 16bit sample size
-						short curSample = getShort(buffer[i*2], buffer[i*2+1]);
-						if (curSample > cAmplitude)
-						{ // Check amplitude
-							cAmplitude = curSample;
-						}
-					}
-				}
-				else	
-				{ // 8bit sample size
-					for (int i=0; i<buffer.length; i++)
+			if (randomAccessWriter != null) {
+				try
+				{ 
+					randomAccessWriter.write(buffer); // Write buffer to file
+					payloadSize += buffer.length;
+					if (bSamples == 16)
 					{
-						if (buffer[i] > cAmplitude)
-						{ // Check amplitude
-							cAmplitude = buffer[i];
+						humanBuffer = new JSONArray();
+						for (int i=0; i<buffer.length/2; i++)
+						{ // 16bit sample size
+							
+							short curSample = getShort(buffer[i*2], buffer[i*2+1]);
+							humanBuffer.put(getInteger(buffer[i*2], buffer[i*2+1]));
+							if (curSample > cAmplitude)
+							{ // Check amplitude
+								cAmplitude = curSample;
+							}
 						}
 					}
+					else	
+					{ // 8bit sample size
+						humanBuffer = new JSONArray();
+						for (int i=0; i<buffer.length; i++)
+						{
+							humanBuffer.put((short)buffer[i]);
+							if (buffer[i] > cAmplitude)
+							{ // Check amplitude
+								cAmplitude = buffer[i];
+							}
+						}
+					}
+					// send the buffer to javascript
+					if (handler != null) {
+						handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + id + "', " + MEDIA_BUFFER + ", " + humanBuffer.toString() + ");");
+					}
 				}
-			}
-			catch (IOException e)
-			{
-				Log.e(ExtAudioRecorder.class.getName(), "Error occured in updateListener, recording is aborted");
-				//stop();
+				catch (IOException e)
+				{
+					Log.e(ExtAudioRecorder.class.getName(), "Error occured in updateListener, recording is aborted");
+					errorMessage = e.getMessage(); 
+					//stop();
+					setState(State.ERROR);
+				}
 			}
 		}
 	
@@ -190,14 +208,9 @@ public class ExtAudioRecorder
 				bSamples = 8;
 			}
 			
-			if (channelConfig == AudioFormat.CHANNEL_IN_MONO)
-			{
-				nChannels = 1;
-			}
-			else
-			{
-				nChannels = 2;
-			}
+			// Force MONO recording for simplicity
+			nChannels = 1;
+			this.channelConfig = channelConfig;
 			
 			aSource = audioSource;
 			sRate   = sampleRate;
@@ -205,15 +218,15 @@ public class ExtAudioRecorder
 
 			framePeriod = sampleRate * TIMER_INTERVAL / 1000;
 			bufferSize = framePeriod * 2 * bSamples * nChannels / 8;
-			if (bufferSize < AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat))
+			if (bufferSize < AudioRecord.getMinBufferSize(sampleRate, this.channelConfig, audioFormat))
 			{ // Check to make sure buffer size is not smaller than the smallest allowed one 
-				bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
+				bufferSize = AudioRecord.getMinBufferSize(sampleRate, this.channelConfig, audioFormat);
 				// Set frame period and timer interval accordingly
 				framePeriod = bufferSize / ( 2 * bSamples * nChannels / 8 );
 				Log.w(ExtAudioRecorder.class.getName(), "Increasing buffer size to " + Integer.toString(bufferSize));
 			}
 			
-			audioRecorder = new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSize);
+			audioRecorder = new AudioRecord(audioSource, sampleRate, this.channelConfig, audioFormat, bufferSize);
 
 			if (audioRecorder.getState() != AudioRecord.STATE_INITIALIZED)
 				throw new Exception("AudioRecord initialization failed");
@@ -228,10 +241,12 @@ public class ExtAudioRecorder
 			if (e.getMessage() != null)
 			{
 				Log.e(ExtAudioRecorder.class.getName(), e.getMessage());
+				errorMessage = e.getMessage();
 			}
 			else
 			{
-				Log.e(ExtAudioRecorder.class.getName(), "Unknown error occured while initializing recording");
+				errorMessage = "Unknown error occured while initializing recording";
+				Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 			}
 			this.setState(State.ERROR);
 		}
@@ -261,10 +276,12 @@ public class ExtAudioRecorder
 			if (e.getMessage() != null)
 			{
 				Log.e(ExtAudioRecorder.class.getName(), e.getMessage());
+				errorMessage = e.getMessage();
 			}
 			else
 			{
-				Log.e(ExtAudioRecorder.class.getName(), "Unknown error occured while setting output path");
+				errorMessage = "Unknown error occured while setting output path";
+				Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 			}
 			this.setState(State.ERROR);
 		}
@@ -332,13 +349,15 @@ public class ExtAudioRecorder
 				}
 				else
 				{
-					Log.e(ExtAudioRecorder.class.getName(), "prepare() method called on uninitialized recorder");
+					errorMessage = "prepare() method called on uninitialized recorder";
+					Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 					this.setState(State.ERROR);
 				}
 			}
 			else
 			{
-				Log.e(ExtAudioRecorder.class.getName(), "prepare() method called on illegal state");
+				errorMessage = "prepare() method called on illegal state";
+				Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 				release();
 				this.setState(State.ERROR);
 			}
@@ -347,11 +366,13 @@ public class ExtAudioRecorder
 		{
 			if (e.getMessage() != null)
 			{
+				errorMessage = e.getMessage();
 				Log.e(ExtAudioRecorder.class.getName(), e.getMessage());
 			}
 			else
 			{
-				Log.e(ExtAudioRecorder.class.getName(), "Unknown error occured in prepare()");
+				errorMessage = "Unknown error occured in prepare()";
+				Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 			}
 			this.setState(State.ERROR);
 		}
@@ -379,6 +400,7 @@ public class ExtAudioRecorder
 				}
 				catch (IOException e)
 				{
+					errorMessage = e.getMessage();
 					Log.e(ExtAudioRecorder.class.getName(), "I/O exception occured while closing output file");
 				}
 				(new File(filePath)).delete();
@@ -405,15 +427,13 @@ public class ExtAudioRecorder
 		{
 			if (state != State.ERROR)
 			{
-				release();
-				filePath = null; // Reset file path
 				cAmplitude = 0; // Reset amplitude
-				audioRecorder = new AudioRecord(aSource, sRate, nChannels+1, aFormat, bufferSize);				
 				this.setState(State.INITIALIZING);
 			}
 		}
 		catch (Exception e)
 		{
+			errorMessage = e.getMessage();
 			Log.e(ExtAudioRecorder.class.getName(), e.getMessage());
 			this.setState(State.ERROR);
 		}
@@ -437,7 +457,8 @@ public class ExtAudioRecorder
 		}
 		else
 		{
-			Log.e(ExtAudioRecorder.class.getName(), "start() called on illegal state");
+			errorMessage = "start() called on illegal state";
+			Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 			this.setState(State.ERROR);
 		}
 	}
@@ -465,9 +486,11 @@ public class ExtAudioRecorder
 				randomAccessWriter.writeInt(Integer.reverseBytes(payloadSize));
 			
 				randomAccessWriter.close();
+				randomAccessWriter = null;
 			}
 			catch(IOException e)
 			{
+				errorMessage = e.getMessage();
 				Log.e(ExtAudioRecorder.class.getName(), "I/O exception occured while closing output file");
 				this.setState(State.ERROR);
 			}
@@ -475,7 +498,8 @@ public class ExtAudioRecorder
 		}
 		else
 		{
-			Log.e(ExtAudioRecorder.class.getName(), "stop() called on illegal state");
+			errorMessage = "stop() called on illegal state";
+			Log.e(ExtAudioRecorder.class.getName(), errorMessage);
 			this.setState(State.ERROR);
 		}
 	}
@@ -487,12 +511,22 @@ public class ExtAudioRecorder
 	 */
 	private short getShort(byte argB1, byte argB2)
 	{
-		return (short)(argB1 | (argB2 << 8));
+		return (short)getInteger(argB1, argB2);
+	}
+	
+	/* 
+	 * 
+	 * Converts a byte[2] to a int, in LITTLE_ENDIAN format
+	 * 
+	 */
+	private int getInteger(byte argB1, byte argB2)
+	{
+		return (int)(argB1 | (argB2 << 8));
 	}
 	
 	private void setState(State state) {
-		if (this.state != state && this.handler != null) {
-            this.handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + this.id + "', " + MEDIA_STATE + ", " + state.ordinal() + ");");
+		if (this.handler != null) {
+            this.handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + this.id + "', " + MEDIA_STATE + ", '" + state.toString() + "', '" + errorMessage + "' );");
         }
 		this.state = state;
 	}
