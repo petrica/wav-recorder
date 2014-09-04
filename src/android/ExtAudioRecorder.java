@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
+import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
 
@@ -124,7 +125,7 @@ public class ExtAudioRecorder
 			audioRecorder.read(buffer, 0, buffer.length); // Fill buffer
 			// send the buffer to javascript
 			if (handler != null) {
-				handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.Recorder').onStatus('" + id + "', " + MEDIA_BUFFER + ", " + Base64.encodeToString(buffer, Base64.DEFAULT) + ");");
+				handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + id + "', " + MEDIA_BUFFER + ", '" + Base64.encodeToString(buffer, Base64.DEFAULT) + "');");
 			}
 			try
 			{ 
@@ -248,7 +249,11 @@ public class ExtAudioRecorder
 		{
 			if (state == State.INITIALIZING)
 			{
-				filePath = argPath;
+				if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+					filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + argPath;
+		        } else {
+		        	filePath = "/data/data/" + handler.cordova.getActivity().getPackageName() + argPath;
+		        }
 			}
 		}
 		catch (Exception e)
@@ -487,7 +492,7 @@ public class ExtAudioRecorder
 	
 	private void setState(State state) {
 		if (this.state != state && this.handler != null) {
-            this.handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.Recorder').onStatus('" + this.id + "', " + MEDIA_STATE + ", " + state.ordinal() + ");");
+            this.handler.webView.sendJavascript("cordova.require('ro.martinescu.audio.WAVRecorder').onStatus('" + this.id + "', " + MEDIA_STATE + ", " + state.ordinal() + ");");
         }
 		this.state = state;
 	}

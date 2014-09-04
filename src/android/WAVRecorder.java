@@ -13,16 +13,16 @@ import android.net.Uri;
 public class WAVRecorder extends CordovaPlugin {
 	public static String TAG = "WAVRecorder";
 	HashMap<String, ExtAudioRecorder> players;
-
+	
 	public WAVRecorder() {
 		this.players = new HashMap<String, ExtAudioRecorder>();
 	}
-
+	
 	public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
 		CordovaResourceApi resourceApi = webView.getResourceApi();
 		PluginResult.Status status = PluginResult.Status.OK;
         String result = "";
-
+        
         if (action.equals("record")) {
             this.startRecording(args.getString(0));
         }
@@ -36,56 +36,48 @@ public class WAVRecorder extends CordovaPlugin {
         }
         else if (action.equals("create")) {
             String id = args.getString(0);
-            String target = args.getString(1);
-            String fileUriStr;
-            try {
-                Uri targetUri = resourceApi.remapUri(Uri.parse(target));
-                fileUriStr = targetUri.toString();
-            } catch (IllegalArgumentException e) {
-                fileUriStr = target;
-            }
-
+            
             int sampleRate = args.getInt(2);
             int channels = args.getInt(3);
             int encoding = args.getInt(4);
-
+            
             // Determine mono or stereo
             if (channels == 1) channels = AudioFormat.CHANNEL_IN_MONO;
             else channels = AudioFormat.CHANNEL_IN_STEREO;
-
+            
             // Determine encoding 16bit or 8bit
             if (encoding == 8) encoding = AudioFormat.ENCODING_PCM_8BIT;
             else encoding = AudioFormat.ENCODING_PCM_16BIT;
-
-            String src = FileHelper.stripFileProtocol(fileUriStr);
+            
+            String src = FileHelper.stripFileProtocol(args.getString(1));
             ExtAudioRecorder audio = ExtAudioRecorder.getInstance(
-            		this,
-            		id,
+            		this, 
+            		id, 
             		sampleRate,
             		channels,
             		encoding
             		);
             audio.setOutputFile(src);
             audio.prepare();
-
+            
             this.players.put(id, audio);
         }
         else {
         	return false;
         }
-
+        
         callbackContext.sendPluginResult(new PluginResult(status, result));
-
+        
         return true;
 	}
-
+	
 	public void startRecording(String id) {
 		ExtAudioRecorder audio = this.players.get(id);
 		if (audio != null) {
 			audio.start();
 		}
     }
-
+	
 	public void stopRecording(String id) {
 		ExtAudioRecorder audio = this.players.get(id);
 		if (audio != null) {
@@ -93,7 +85,7 @@ public class WAVRecorder extends CordovaPlugin {
 			audio.reset();
 		}
 	}
-
+	
 	private boolean release(String id) {
         if (!this.players.containsKey(id)) {
             return false;
@@ -103,7 +95,7 @@ public class WAVRecorder extends CordovaPlugin {
         audio.release();
         return true;
     }
-
+	
 	/**
      * Stop all audio recorders on navigate.
      */

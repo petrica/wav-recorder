@@ -10,7 +10,7 @@
     <author>Martinescu Petrica (petrica@martinescu.com)</author>
     <license>MIT</license>
 
-    <dependency id="org.apache.cordova.media" version=">=0.2.12" />
+    <dependency id="org.apache.cordova.media" version=">=0.2.0" />
 
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
@@ -22,8 +22,8 @@
         <source-file src="src/android/WAVRecorder.java" target-dir="src/ro/martinescu/audio" />
         <source-file src="src/android/ExtAudioRecorder.java" target-dir="src/ro/martinescu/audio" />
 
-        <js-module src="www/android/wavrecorder.js" name="wavrecorder_android">
-            <clobbers target="windows.martinescu.Recorder"/>
+        <js-module src="www/android/wavrecorder.js" name="WAVRecorder">
+            <clobbers target="window.martinescu.Recorder"/>
         </js-module>
 		
 		<config-file target="AndroidManifest.xml" parent="/*">
