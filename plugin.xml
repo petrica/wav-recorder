@@ -10,7 +10,7 @@
     <author>Martinescu Petrica (petrica@martinescu.com)</author>
     <license>MIT</license>
 
-    <dependency id="org.apache.cordova.media" version=">=0.2.0" />
+    <dependency id="cordova-plugin-media" version=">=0.2.0" />
 
     <platform name="android">
         <config-file target="res/xml/config.xml" parent="/*">
