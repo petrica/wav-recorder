@@ -69,6 +69,14 @@ public class WAVRecorder extends CordovaPlugin {
             
             this.players.put(id, audio);
         }
+        else if (action.equals("locate")) {
+
+            String id = args.getString(0);
+				
+				ExtAudioRecorder audio = this.players.get(id);
+
+            callbackContext.success(audio.getFilePath());
+	}
         else {
         	return false;
         }

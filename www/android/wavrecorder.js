@@ -13,6 +13,7 @@ var sampleConfig = {
 var Recorder = function(src, config, statusCallback, bufferCallback) {
   argscheck.checkArgs('S*FF', 'Recorder', arguments);
   this.id = utils.createUUID();
+  console.log("REC ID IS "+this.id);
   mediaObjects[this.id] = this;
   this.src = src;
   this.bufferCallback = bufferCallback;
@@ -64,6 +65,16 @@ Recorder.prototype.stop = function() {
  */
 Recorder.prototype.release = function() {
   exec(null, null, "WAVRecorder", "release", [this.id]);
+};
+
+/**
+ * Get the filesystem location of the wav.
+ */
+Recorder.prototype.location = function() {
+	var self = this;
+  return new Promise(function(resolve,reject) {
+    exec(resolve, reject, "WAVRecorder", "locate", [self.id]);
+  });
 };
 
 /**

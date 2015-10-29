@@ -531,4 +531,8 @@ public class ExtAudioRecorder
 		this.state = state;
 	}
 	
+	public String getFilePath() {
+		return filePath;
+	}
+	
 }
