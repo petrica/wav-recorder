@@ -59,6 +59,13 @@ Stop recording
 recorder.stop();
 ```
 
+Record for a fixed amount of time
+---------------------------------
+```
+recorder.recordForMillis(durationMilliseconds);
+```
+Use the statusCallback to determine when the audio recording has stopped.
+
 Get file location
 ----------------
 Find the path of the created wav file as a local absolute path

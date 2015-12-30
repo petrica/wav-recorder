@@ -54,6 +54,13 @@ Recorder.prototype.record = function(options) {
 };
 
 /**
+* run recorder for a set length of time
+  */
+Recorder.prototype.recordForMillis = function(durationMS) {
+  exec(null, null, "WAVRecorder", "recordForMillis", [this.id, durationMS ]);
+};
+
+/**
  * Stop recording audio file.
  */
 Recorder.prototype.stop = function() {
