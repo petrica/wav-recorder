@@ -269,11 +269,19 @@ public class ExtAudioRecorder
 		{
 			if (state == State.INITIALIZING)
 			{
-				if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-					filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + argPath;
-		        } else {
-		        	filePath = "/data/data/" + handler.cordova.getActivity().getPackageName() + argPath;
-		        }
+				if (argPath.indexOf('/')==0) // assume absolute path
+				{
+					filePath = argPath;
+				}
+				else
+				{
+					if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+						filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + argPath;
+	        } else {
+	        	filePath = "/data/data/" + handler.cordova.getActivity().getPackageName() + argPath;
+	        }
+				}
+				Log.d(ExtAudioRecorder.class.getName(), "writing to "+filePath);
 			}
 		}
 		catch (Exception e)
@@ -476,7 +484,8 @@ public class ExtAudioRecorder
 	 if (state == State.READY)
 	 {
 		 payloadSize = 0;
-		 maxPayloadSize = durationMS * sRate * nChannels / 1000;
+		 maxPayloadSize = durationMS * sRate  / (1000 * 8) * nChannels * bSamples;
+		 Log.d(ExtAudioRecorder.class.getName(), "We're going to record a payload of " + maxPayloadSize);
 		 audioRecorder.startRecording();
 		 audioRecorder.read(buffer, 0, buffer.length);
 		 this.setState(State.RECORDING);
