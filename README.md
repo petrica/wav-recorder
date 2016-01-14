@@ -20,7 +20,7 @@ Initialize Recorder
 ```
 var recorder = new martinescu.Recorder(src, [config], [statusCallback], [bufferCallback]);
 ```
-* src - file to write the audio data to, relative to root
+* src - file to write the audio data to, you should use Recorder.location() to work out the exact path after creation
 * config - configure capture format
   * sampleRate - sample rate: 44100, 22050, 11025, 8000
   * channels - for now only single channel recording is available: 1 or 2
@@ -57,6 +57,20 @@ Stop recording
 --------------
 ```
 recorder.stop();
+```
+
+Record for a fixed amount of time
+---------------------------------
+```
+recorder.recordForMillis(durationMilliseconds);
+```
+Use the statusCallback to determine when the audio recording has stopped.
+
+Get file location
+----------------
+Find the path of the created wav file as a local absolute path
+```
+recorder.location();
 ```
 
 Release Recorder
