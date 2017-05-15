@@ -1,0 +1,25 @@
+{
+  "name": "cordova-wav-recorder",
+  "version": "2.0.0",
+  "description": "Advanced Android Recording that provides access to the recorded buffer to the webview.",
+  "cordova": {
+    "id": "ro.martinescu.audio",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/petrica/wav-recorder.git"
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "Petrica Martinescu <petrica@martinescu.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/petrica/wav-recorder/issues"
+  },
+  "homepage": "https://github.com/petrica/wav-recorder#readme"
+}
